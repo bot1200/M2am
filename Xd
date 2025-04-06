@@ -822,6 +822,40 @@ end)
 
 setupCharacter()
 
+Library.addToggle(tab3, "auto Kill all (Be a murderer)", "Auto matar a todos (ser asesino)", false, function(state)
+    local autokillallloop = state
+
+    while autokillallloop do
+        local localPlayer = game.Players.LocalPlayer
+        local localCharacter = localPlayer.Character
+        local knife = localCharacter and localCharacter:FindFirstChild("Knife")
+
+        if knife then
+            local slashStart = knife:FindFirstChild("KnifeServer") and knife.KnifeServer:FindFirstChild("SlashStart")
+
+            if slashStart then
+                for _, player in ipairs(game.Players:GetPlayers()) do
+                    if player ~= localPlayer then
+                        local playerCharacter = player.Character
+                        local humanoidRootPart = playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart")
+
+                        if humanoidRootPart then
+                            local args = {
+                                [1] = 1
+                            }
+                            slashStart:FireServer(unpack(args))
+                            firetouchinterest(humanoidRootPart, knife.Handle, 1)
+                            firetouchinterest(humanoidRootPart, knife.Handle, 0)
+                        end
+                    end
+                end
+            end
+        end
+
+        task.wait(0.1)
+    end
+end)
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local transparency = 0.6
@@ -1464,6 +1498,98 @@ Library.addButton(tab2, "anchor Shoot gui", "ButtonInfo", function()
     if shootButton then
         shootButton.Draggable = not shootButton.Draggable
     end
+end)
+
+local invs = false  
+
+Library.addToggle(tab4, "Invisible", "", false, function(state)  
+    invs = state  
+    local player = game.Players.LocalPlayer  
+    local character = player.Character or player.CharacterAdded:Wait()  
+    local savedpos  
+  
+    if invs then  
+        savedpos = character.HumanoidRootPart.CFrame  
+        character:MoveTo(Vector3.new(-25.95, 84, 3537.55))  
+        task.wait(.10)  
+  
+        local Seat = Instance.new('Seat', game.Workspace)  
+        Seat.Anchored = false  
+        Seat.CanCollide = false  
+        Seat.Name = 'invischair'  
+        Seat.Transparency = 1  
+        Seat.Position = Vector3.new(-25.95, 84, 3537.55)  
+          
+        local Weld = Instance.new("Weld", Seat)  
+        Weld.Part0 = Seat  
+        Weld.Part1 = character.HumanoidRootPart  
+        task.wait()  
+  
+        character.HumanoidRootPart.CFrame = savedpos  
+    else  
+        local invisChair = workspace:FindFirstChild('invischair')  
+        if invisChair then  
+            invisChair:Destroy()  
+        end  
+    end  
+end)  
+
+Library.addButton(tab4, "Fake bomb trick", "ButtonInfo", function()
+local player = game:GetService("Players").LocalPlayer
+local coreGui, replicatedStorage = game:GetService("CoreGui"), game:GetService("ReplicatedStorage")
+local gui = coreGui:FindFirstChild("bomb")
+if gui then gui:Destroy() end
+gui = Instance.new("ScreenGui", coreGui)
+gui.Name = "bomb"
+local btn = Instance.new("TextButton", gui)
+btn.Size, btn.Position = UDim2.new(0, 100, 0, 100), UDim2.new(1, -110, 0, 10)
+btn.Text, btn.Font, btn.TextSize, btn.TextColor3 = "Fake bomb trick", Enum.Font.Gotham, 14, Color3.new(1, 1, 1)
+btn.BackgroundColor3, btn.BackgroundTransparency, btn.Draggable = Color3.new(0, 1, 0), 0.6, true
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 15)
+local canUse, cooldown = true, 22
+
+local function reset()
+    canUse, btn.BackgroundColor3, btn.Text = true, Color3.new(0, 1, 0), "Fake bomb trick"
+end
+
+local function useBomb()
+    if not canUse then return end
+    canUse, btn.BackgroundColor3 = false, Color3.new(1, 0, 0)
+    local char = player.Character or player.CharacterAdded:Wait()
+    local backpack = player:FindFirstChild("Backpack")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    local c4 = backpack:FindFirstChild("C4") or char:FindFirstChild("C4")
+
+    if hrp and humanoid and c4 and backpack then
+        c4.Parent = char
+        humanoid.JumpPower = 58
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        local positionBelow = hrp.Position - Vector3.new(0, 3, 0)
+        local args = {
+            [1] = c4,
+            [2] = positionBelow,
+            [3] = 22,
+            [4] = 50
+        }
+        c4.RemoteEvent:FireServer(unpack(args))
+        task.wait(0.3)
+        c4.Parent = backpack
+        humanoid.JumpPower = 51
+    end
+
+    local start, currentChar = time(), player.Character
+    while time() - start < cooldown do
+        if player.Character ~= currentChar then reset() return end
+        btn.Text = string.format("Cooldown: %ds", cooldown - math.floor(time() - start))
+        task.wait(0.1)
+    end
+    reset()
+end
+
+btn.MouseButton1Click:Connect(useBomb)
+player.CharacterAdded:Connect(reset)
+reset()
 end)
 
 Library.addButton(tab4, "Boost fps", "ButtonInfo", function()
